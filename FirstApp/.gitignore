@@ -1,0 +1,28 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment Variables (CRITICAL: Never push your secret keys!)
+.env
+.env.local
+
+# Django Local Database
+db.sqlite3
+db.sqlite3-journal
+
+# Logs
+*.log
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# VS Code / IDE folders
+.vscode/
+.idea/
