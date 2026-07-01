@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: incidentops
+      POSTGRES_USER: incidentops_user
+      POSTGRES_PASSWORD: incidentops_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U incidentops_user -d incidentops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis (Channels + Celery Broker) ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Django Backend (Daphne ASGI) ─────────────────────────────
+  backend:
+    build:
+      context: ./FirstApp
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./FirstApp:/app
+    env_file:
+      - ./FirstApp/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             daphne -b 0.0.0.0 -p 8000 myproject.asgi:application"
+
+  # ── Celery Worker ────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./FirstApp
+      dockerfile: Dockerfile
+    volumes:
+      - ./FirstApp:/app
+    env_file:
+      - ./FirstApp/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A myproject worker -l info
+
+  # ── Celery Beat (Periodic Tasks) ─────────────────────────────
+  celery_beat:
+    build:
+      context: ./FirstApp
+      dockerfile: Dockerfile
+    volumes:
+      - ./FirstApp:/app
+    env_file:
+      - ./FirstApp/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A myproject beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  # ── React Frontend (Nginx Production Server) ─────────────────
+  frontend:
+    build:
+      context: ./frontend/my-project
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
