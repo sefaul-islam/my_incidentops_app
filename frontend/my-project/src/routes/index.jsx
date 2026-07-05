@@ -5,12 +5,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 
+import LandingPage from './LandingPage';
 import IncidentOpsHome from './Home';
 import LoginPage from './LoginPage';
 import OAuthCallback from './OAuthCallback';
 import IncidentDetail from './IncidentDetail';
 import PostMortemView from './PostMortemView';
 import SettingsPage from './SettingsPage';
+import NotFoundPage from './NotFoundPage';
 
 /**
  * Protected route wrapper — redirects to /login if not authenticated.
@@ -34,7 +36,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -46,11 +48,12 @@ export function AppRouter() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback/:provider" element={<OAuthCallback />} />
 
           {/* Protected routes */}
-          <Route path="/" element={
+          <Route path="/dashboard" element={
             <ProtectedRoute><IncidentOpsHome /></ProtectedRoute>
           } />
           <Route path="/incidents" element={
@@ -70,7 +73,7 @@ export function AppRouter() {
           } />
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

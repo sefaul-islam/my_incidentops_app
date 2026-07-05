@@ -29,7 +29,7 @@ export default function LoginPage() {
       } else {
         await login(email, password);
       }
-      navigate(searchParams.get('next') || '/');
+      navigate(searchParams.get('next') || '/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.detail || 'Authentication failed.');
     } finally {

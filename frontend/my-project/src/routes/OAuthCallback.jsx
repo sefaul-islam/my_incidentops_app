@@ -20,7 +20,7 @@ export default function OAuthCallback() {
     }
 
     loginWithOAuth(provider, code)
-      .then(() => navigate('/'))
+      .then(() => navigate('/dashboard'))
       .catch((err) => {
         setError(err.response?.data?.error || 'OAuth authentication failed.');
       });
