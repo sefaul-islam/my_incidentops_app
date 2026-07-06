@@ -35,6 +35,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Periodically refresh user profile to pick up role changes
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      authAPI.getMe()
+        .then(({ data }) => {
+          setUser(prev => {
+            // Only update if role or key fields changed
+            if (prev?.role !== data.role || prev?.is_on_call !== data.is_on_call) {
+              localStorage.setItem('user', JSON.stringify(data));
+              return data;
+            }
+            return prev;
+          });
+        })
+        .catch(() => {});
+    }, 30000); // every 30 seconds
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   const login = useCallback(async (email, password) => {
     const { data } = await authAPI.login(email, password);
     localStorage.setItem('tokens', JSON.stringify(data.tokens));
